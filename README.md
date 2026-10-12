@@ -5,7 +5,7 @@ The React frontend lives in the repository [StockPilot-FE](https://github.com/sa
 
 | | |
 |---|---|
-| Deployed app | _Add after hosting:_ frontend `<URL>`, API `<URL>/actuator/health` |
+| Deployed app | Frontend: https://sanatstockpilot.vercel.app · API: https://stockpilot-be-rh1l.onrender.com (health: `/actuator/health`) |
 | Demo logins | `owner@stockpilot.demo` and `staff@stockpilot.demo`, password `Demo@12345` (synthetic data, loaded with `SEED_DEMO_DATA=true`) |
 | Self-registration | Open to anyone: register, and you become the owner of a new workspace |
 
@@ -169,7 +169,7 @@ Schema = Flyway migrations in `src/main/resources/db/migration`, applied automat
 
 ## API
 
-Base: `/api`. Auth: `Authorization: Bearer <token>` (from register/login). Success: `{"data": ..., "meta": {page,pageSize,total,totalPages}?}`. Errors: `{"error": {"code","message","details"?}}` with codes `VALIDATION_ERROR` (400), `UNAUTHENTICATED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` / `DUPLICATE_SKU` / `EMAIL_TAKEN` / `INSUFFICIENT_STOCK` / `INACTIVE_PRODUCT` / `INVALID_TRANSITION` (409), `RATE_LIMITED` (429). Internal errors never expose stack traces or SQL.
+Base: `/api`. List endpoints are paginated with `page` (default 1) and `pageSize` (default 10, max 100; larger values are rejected with 400). Auth: `Authorization: Bearer <token>` (from register/login). Success: `{"data": ..., "meta": {page,pageSize,total,totalPages}?}`. Errors: `{"error": {"code","message","details"?}}` with codes `VALIDATION_ERROR` (400), `UNAUTHENTICATED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` / `DUPLICATE_SKU` / `EMAIL_TAKEN` / `INSUFFICIENT_STOCK` / `INACTIVE_PRODUCT` / `INVALID_TRANSITION` (409), `RATE_LIMITED` (429). Internal errors never expose stack traces or SQL.
 
 | Method & path | Permission | Notes |
 |---|---|---|
@@ -230,7 +230,7 @@ Because auth is a bearer token (no cookies), there is no cross-site cookie / `Sa
 
 ## Known limitations and trade-offs
 
-- **Deployment URL pending**: fill in the table at the top once hosted. Free-tier cold starts apply.
+- **Free-tier hosting**: the API (Render) sleeps when idle, so the first request after a pause can take 60 to 90 seconds; the free Render PostgreSQL may be deleted after its trial period, after which the app re-creates the schema and demo data on the next boot.
 - The JWT lives in the browser's `localStorage` (simple, cross-origin friendly, but readable by any XSS). Tokens are not revocable before expiry (8 h); membership is nevertheless checked live on every request. No refresh tokens.
 - No email verification, password reset or invitations: owners add users who already have accounts. Adding by email reveals to an owner whether an address is registered.
 - Login/register rate limiting is in-memory, per instance.
@@ -242,8 +242,37 @@ Because auth is a bearer token (no cookies), there is no cross-site cookie / `Sa
 
 ## AI use disclosure
 
-- **Tool:** Claude (Claude Code, Sonnet 5.5) was used to scaffold and write most of the backend, frontend, tests and this README, working from the assessment brief.
-- **Process and verification:** the code was compiled and the full test suite executed (`./mvnw test`, 36 passing; frontend `npm test`, `tsc`, production build). The app was run against a real PostgreSQL and exercised in a browser (login, dashboard, multi-item order, cancellation, mobile layout).
-- **Bugs found by the tests/runs and fixed:** (1) Jackson silently coerced `1.5` to `1` for integer fields, so a fractional stock adjustment was accepted as `+1`; fixed by disabling `ACCEPT_FLOAT_AS_INT`. (2) Query parameters such as `status=cancelled` failed because Spring's default enum conversion was case-sensitive; added converters. (3) A test expectation was wrong (60.07 vs the correct 60.27); the server was right. (4) The Postgres driver had `runtime` scope while error translation needed it at compile time.
-- **Assumptions I made, and you should review:** reserve-at-creation strategy; staff may view the dashboard and adjust stock but not edit products; "order value" excludes cancelled orders; IST date filters.
-- The author must be able to explain: the order creation transaction (`OrderService.doCreate`), the cancel path (`OrderService.apply/releaseStock`), `WorkspaceAccess.require`, and the schema constraints above.
+I used an AI coding assistant, **Claude (Claude Code)**, to build most of this project, and I want to be upfront about how.
+
+**What I used it for**
+- Writing most of the backend code, the database migration, the tests and the READMEs, based on the assessment brief.
+- Writing the first version of the frontend, and then changing it as I asked: moving the backend to Spring Boot, using Redux with Axios on the frontend, switching to rupees and IST, and reshaping the layout, filters and pages.
+- Helping me debug problems, like the IntelliJ setup errors and the Render and Vercel deployment steps.
+
+**What I did myself**
+- I chose the stack (Spring Boot, React with Tailwind and lucide-react, PostgreSQL, Render and Vercel) and gave feedback on how the screens should look and behave.
+- I ran the app, clicked through it, and decided what to keep, change or remove.
+
+**How the code was checked**
+- The backend has 36 automated tests that run against a real PostgreSQL, including tests for stock never going negative, atomic multi-item orders, cancelling only once, and several requests competing for the same stock. They pass, including on a fresh clone of the repository.
+- The frontend has its own tests, and the app was exercised in a browser against the real API: login, products, stock changes, orders, roles, workspaces and the team page.
+
+**Real bugs found along the way and fixed**
+- A fractional quantity like `1.5` was silently accepted as `1`, so I turned that off.
+- Filters like `status=cancelled` failed because the conversion was case-sensitive.
+- The quantity stepper could lose a click when pressed very fast.
+- One of the tests had the wrong expected number. The server was right and the test was wrong.
+
+**Assumptions I made, which a reviewer should check**
+- Stock is reserved when an order is created, and given back once if it is cancelled.
+- Staff can view things, adjust stock and manage orders, but cannot edit products or manage the team.
+- Order value leaves out cancelled orders.
+- Date filters use IST calendar days, while timestamps are stored in UTC.
+
+**Things I should be able to explain**
+- How an order is created safely in one transaction (`OrderService.doCreate`).
+- How cancelling restores stock only once (`OrderService.apply` and `releaseStock`).
+- How every request is checked for workspace membership (`WorkspaceAccess.require`).
+- Which database constraints protect the data, and why.
+
+I am responsible for everything in this repository, including the parts the AI wrote.
