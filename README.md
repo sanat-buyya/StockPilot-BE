@@ -54,7 +54,7 @@ Key constraints (see `src/main/resources/db/migration/V1__init.sql`):
 - `order_items.line_total = unit_price * quantity` is a CHECK.
 - Partial unique index `(order_id, product_id, reason_type) WHERE order_id IS NOT NULL` on adjustments: a second "release" for the same order line is rejected by the database.
 - Money is `numeric(12,2)` in the database and `BigDecimal` in Java; the API exposes decimal strings (`"19.99"`). No floats anywhere.
-- All timestamps are `timestamptz` (UTC).
+- All timestamps are `timestamptz`, stored and returned in UTC. Date *filters* use IST calendar days (see below).
 
 ## Order lifecycle and stock strategy
 
@@ -96,7 +96,7 @@ The matrix lives in one place: `workspace/Permission.java`. A workspace must alw
 
 ## Dashboard metric definitions
 
-All metrics are computed from persisted data; the same definitions apply to the API and the UI. Date range = `from`/`to` (UTC days, both inclusive; default: last 30 days).
+All metrics are computed from persisted data; the same definitions apply to the API and the UI. Date range = `from`/`to` (IST days, both inclusive; default: last 30 days).
 
 - **Active products**: products with `is_active = true` (point in time, not range-bound).
 - **Low stock**: *active* products with `stock_quantity <= low_stock_threshold` (point in time).
@@ -104,7 +104,7 @@ All metrics are computed from persisted data; the same definitions apply to the 
 - **Order value**: sum of `total` of orders created in the range whose status is **not** `cancelled` (pending + confirmed + completed). `valueByStatus` gives the split.
 - **Recent orders / recent stock changes**: latest 5 in the workspace, regardless of range.
 
-Date filters everywhere (`from`, `to`) are `YYYY-MM-DD`, interpreted as UTC; `to` includes that whole day.
+Date filters everywhere (`from`, `to`) are `YYYY-MM-DD`, interpreted as calendar days in **IST (Asia/Kolkata, UTC+05:30)**, the documented business timezone; `to` includes that whole day. Timestamps themselves are stored and returned in UTC (ISO-8601 with `Z`) and shown in IST by the UI.
 
 ## Run locally
 
@@ -235,7 +235,7 @@ Because auth is a bearer token (no cookies), there is no cross-site cookie / `Sa
 - No email verification, password reset or invitations: owners add users who already have accounts. Adding by email reveals to an owner whether an address is registered.
 - Login/register rate limiting is in-memory, per instance.
 - Orders cannot be edited after creation (cancel and recreate). No partial cancellation or returns.
-- Currency is not modelled (single implicit currency; the UI formats as USD).
+- Currency is not modelled (single implicit currency; the UI formats amounts as Indian Rupees, ₹).
 - Authorization is per-workspace-role only; there is no per-user product ownership or finer permissions.
 - Stock history uses offset pagination; fine for this scale, not for millions of rows.
 - `order_number` is a global identity sequence, so numbers are unique but not gap-free or per-workspace.
@@ -245,5 +245,5 @@ Because auth is a bearer token (no cookies), there is no cross-site cookie / `Sa
 - **Tool:** Claude (Claude Code, Sonnet 5.5) was used to scaffold and write most of the backend, frontend, tests and this README, working from the assessment brief.
 - **Process and verification:** the code was compiled and the full test suite executed (`./mvnw test`, 36 passing; frontend `npm test`, `tsc`, production build). The app was run against a real PostgreSQL and exercised in a browser (login, dashboard, multi-item order, cancellation, mobile layout).
 - **Bugs found by the tests/runs and fixed:** (1) Jackson silently coerced `1.5` to `1` for integer fields, so a fractional stock adjustment was accepted as `+1`; fixed by disabling `ACCEPT_FLOAT_AS_INT`. (2) Query parameters such as `status=cancelled` failed because Spring's default enum conversion was case-sensitive; added converters. (3) A test expectation was wrong (60.07 vs the correct 60.27); the server was right. (4) The Postgres driver had `runtime` scope while error translation needed it at compile time.
-- **Assumptions I made, and you should review:** reserve-at-creation strategy; staff may view the dashboard and adjust stock but not edit products; "order value" excludes cancelled orders; UTC date filters.
+- **Assumptions I made, and you should review:** reserve-at-creation strategy; staff may view the dashboard and adjust stock but not edit products; "order value" excludes cancelled orders; IST date filters.
 - The author must be able to explain: the order creation transaction (`OrderService.doCreate`), the cancel path (`OrderService.apply/releaseStock`), `WorkspaceAccess.require`, and the schema constraints above.

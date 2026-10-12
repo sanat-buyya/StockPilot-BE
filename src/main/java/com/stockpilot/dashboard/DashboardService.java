@@ -1,5 +1,6 @@
 package com.stockpilot.dashboard;
 
+import com.stockpilot.common.DateRange;
 import com.stockpilot.inventory.Adjustment;
 import com.stockpilot.inventory.AdjustmentRepository;
 import com.stockpilot.order.Order;
@@ -11,7 +12,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
  * <ul>
  *   <li>activeProducts: products with is_active = true</li>
  *   <li>lowStockProducts: ACTIVE products with stock_quantity &lt;= low_stock_threshold</li>
- *   <li>ordersByStatus: orders CREATED in [from, to] (UTC days, inclusive), grouped by their current status</li>
+ *   <li>ordersByStatus: orders CREATED in [from, to] (IST days, inclusive), grouped by their current status</li>
  *   <li>orderValue: sum of totals of orders created in the range whose status is NOT cancelled
  *       (pending + confirmed + completed); valueByStatus gives the per-status split</li>
  *   <li>recentOrders / recentAdjustments: latest 5 in the workspace, regardless of the range</li>
@@ -52,14 +52,14 @@ public class DashboardService {
     }
 
     public Dashboard get(Ctx ctx, LocalDate fromIn, LocalDate toIn) {
-        LocalDate to = toIn != null ? toIn : LocalDate.now(ZoneOffset.UTC);
+        LocalDate to = toIn != null ? toIn : LocalDate.now(DateRange.ZONE);
         LocalDate from = fromIn != null ? fromIn : to.minusDays(29);
         if (from.isAfter(to)) {
             throw com.stockpilot.common.AppException.validation("Validation failed",
                     List.of(Map.of("field", "to", "message", "'to' must not be before 'from'")));
         }
-        OffsetDateTime start = from.atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endExclusive = to.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime start = from.atStartOfDay(DateRange.ZONE).toOffsetDateTime();
+        OffsetDateTime endExclusive = to.plusDays(1).atStartOfDay(DateRange.ZONE).toOffsetDateTime();
 
         long active = jdbc.sql("SELECT count(*) FROM products WHERE workspace_id = :w AND is_active")
                 .param("w", ctx.workspaceId()).query(Long.class).single();

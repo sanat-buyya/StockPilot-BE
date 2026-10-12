@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 
 /** Pure unit tests: no Spring, no database. */
 class DomainRulesTest {
+    private static final ZoneOffset IST = ZoneOffset.ofHoursMinutes(5, 30);
+
 
     @Test
     @DisplayName("Order lifecycle: allowed and forbidden transitions")
@@ -64,11 +66,11 @@ class DomainRulesTest {
     }
 
     @Test
-    @DisplayName("Date filters are UTC days; 'to' is inclusive of the whole day")
+    @DisplayName("Date filters are IST days (UTC+05:30); 'to' is inclusive of the whole day")
     void dateRange() {
         DateRange r = DateRange.of(LocalDate.parse("2026-03-01"), LocalDate.parse("2026-03-31"));
-        assertEquals(java.time.OffsetDateTime.of(2026, 3, 1, 0, 0, 0, 0, ZoneOffset.UTC), r.from());
-        assertEquals(java.time.OffsetDateTime.of(2026, 4, 1, 0, 0, 0, 0, ZoneOffset.UTC), r.toExclusive());
+        assertEquals(java.time.OffsetDateTime.of(2026, 3, 1, 0, 0, 0, 0, IST), r.from());
+        assertEquals(java.time.OffsetDateTime.of(2026, 4, 1, 0, 0, 0, 0, IST), r.toExclusive());
         assertNull(DateRange.of(null, null).from());
         assertThrows(AppException.class, () -> DateRange.of(LocalDate.parse("2026-03-02"), LocalDate.parse("2026-03-01")));
     }

@@ -102,7 +102,7 @@ class ProductAndInventoryTest extends IntegrationTest {
         assertEquals(stockOf(id), sum, "sum of recorded changes must equal current stock");
         assertEquals(12, stockOf(id));
 
-        // Filters: by reason and date range (UTC days)
+        // Filters: by reason and date range (IST days)
         JsonNode damaged = get(a, ws(a) + "/inventory/adjustments?reasonType=damaged&productId=" + id, 200);
         assertEquals(1, damaged.get("meta").get("total").asInt());
         JsonNode future = get(a, ws(a) + "/inventory/adjustments?from=2999-01-01", 200);

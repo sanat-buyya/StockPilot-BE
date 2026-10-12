@@ -76,20 +76,20 @@ public class DemoDataSeeder implements ApplicationRunner {
 
         record P(String name, String sku, String price, int stock, int threshold) {}
         List<P> catalogue = List.of(
-                new P("Wireless Mouse", "MOUSE-001", "24.99", 120, 20),
-                new P("Mechanical Keyboard", "KEYB-001", "89.50", 45, 10),
-                new P("USB-C Cable 1m", "CABLE-USBC-1", "7.25", 300, 50),
-                new P("27\" Monitor", "MON-27", "219.00", 18, 5),
-                new P("Laptop Stand", "STAND-001", "35.00", 8, 10),
-                new P("Webcam 1080p", "CAM-1080", "59.90", 4, 5),
-                new P("Desk Mat", "MAT-XL", "19.99", 60, 15),
-                new P("HDMI Cable 2m", "CABLE-HDMI-2", "11.49", 150, 30),
-                new P("Noise-Cancelling Headset", "HEAD-NC", "129.00", 22, 8),
-                new P("Docking Station", "DOCK-USB4", "179.00", 0, 3));
+                new P("Wireless Mouse", "MOUSE-001", "799.00", 120, 20),
+                new P("Mechanical Keyboard", "KEYB-001", "2999.00", 45, 10),
+                new P("USB-C Cable 1m", "CABLE-USBC-1", "249.00", 300, 50),
+                new P("27\" Monitor", "MON-27", "12999.00", 18, 5),
+                new P("Laptop Stand", "STAND-001", "1499.00", 8, 10),
+                new P("Webcam 1080p", "CAM-1080", "2499.00", 4, 5),
+                new P("Desk Mat", "MAT-XL", "599.00", 60, 15),
+                new P("HDMI Cable 2m", "CABLE-HDMI-2", "399.00", 150, 30),
+                new P("Noise-Cancelling Headset", "HEAD-NC", "4999.00", 22, 8),
+                new P("Docking Station", "DOCK-USB4", "7999.00", 0, 3));
         List<Product> created = catalogue.stream().map(p -> products.create(ownerCtx,
                 new CreateProductRequest(p.name(), p.sku(), null, new BigDecimal(p.price()), p.stock(), p.threshold(), true))).toList();
         // A retired product: inactive products cannot be ordered.
-        products.create(ownerCtx, new CreateProductRequest("Legacy VGA Adapter", "VGA-OLD", "Discontinued", new BigDecimal("3.00"), 5, 0, false));
+        products.create(ownerCtx, new CreateProductRequest("Legacy VGA Adapter", "VGA-OLD", "Discontinued", new BigDecimal("99.00"), 5, 0, false));
 
         inventory.adjust(staffCtx, created.get(2).id(), 100, Reason.RECEIVED, "Supplier delivery PO-1042");
         inventory.adjust(staffCtx, created.get(5).id(), -1, Reason.DAMAGED, "Cracked lens in storage");
@@ -106,7 +106,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         UUID sandbox = staff.workspaces().get(0).id();
         Ctx sandboxCtx = new Ctx(staffId, sandbox, Role.OWNER);
         products.create(sandboxCtx, new CreateProductRequest("Wireless Mouse", "MOUSE-001", "Same SKU as Acme: allowed in another workspace",
-                new BigDecimal("19.00"), 10, 2, true));
+                new BigDecimal("699.00"), 10, 2, true));
         log.info("Seeded demo data: {} / {} (workspaces: Acme Supplies, Sam's Sandbox)", OWNER_EMAIL, STAFF_EMAIL);
     }
 }
