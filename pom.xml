@@ -15,6 +15,10 @@
 	<description>StockPilot inventory and order management API</description>
 	<properties>
 		<java.version>21</java.version>
+		<!-- explicit so IDEs (IntelliJ) never fall back to an old default language level -->
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<maven.compiler.release>21</maven.compiler.release>
 	</properties>
 	<dependencies>
 		<dependency>

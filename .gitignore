@@ -31,3 +31,4 @@ cp.txt
 .vscode/
 *.log
 .claude/
+${project.build.directory}/
