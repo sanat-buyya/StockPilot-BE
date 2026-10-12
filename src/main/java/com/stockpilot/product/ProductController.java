@@ -57,7 +57,7 @@ public class ProductController {
             @RequestParam(defaultValue = "name") String sort,
             @RequestParam(defaultValue = "asc") String dir,
             @RequestParam(defaultValue = "1") @Min(1) @Max(100_000) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int pageSize) {
         Ctx ctx = access.require(auth, workspaceId, Permission.PRODUCT_READ);
         Sort s;
         try {
@@ -105,7 +105,7 @@ public class ProductController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "1") @Min(1) @Max(100_000) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int pageSize) {
         Ctx ctx = access.require(auth, workspaceId, Permission.INVENTORY_READ);
         products.get(ctx, productId); // 404 if the product is not in this workspace
         DateRange r = DateRange.of(from, to);

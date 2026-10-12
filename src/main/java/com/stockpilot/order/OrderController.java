@@ -49,7 +49,7 @@ public class OrderController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "1") @Min(1) @Max(100_000) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int pageSize) {
         Ctx ctx = access.require(auth, workspaceId, Permission.ORDER_READ);
         DateRange r = DateRange.of(from, to);
         Page<OrderService.OrderView> result = orders.list(ctx,
